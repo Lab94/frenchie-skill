@@ -13,7 +13,9 @@ import {
 } from "../src/index.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
-const repoRoot = resolve(packageDirectory, "..", "..");
+const repoRoot = existsSync(join(packageDirectory, "server.json"))
+  ? packageDirectory
+  : resolve(packageDirectory, "..", "..");
 
 function walkTsFiles(root: string): string[] {
   const files: string[] = [];
@@ -133,7 +135,6 @@ test("server.json version fields stay locked to packages/skill/package.json", ()
   // also verifies the tag matches packages/skill/package.json version, so
   // this test closes the loop — any drift fails CI before a tag is ever
   // pushed.
-  const repoRoot = resolve(packageDirectory, "..", "..");
   const serverJsonPath = join(repoRoot, "server.json");
   assert.ok(existsSync(serverJsonPath), `server.json must exist at the monorepo root (${serverJsonPath})`);
 
@@ -217,7 +218,7 @@ test("package metadata and registry files advertise the current capability set",
   };
   const smithery = readFileSync(join(packageDirectory, "smithery.yaml"), "utf8");
   const serverJson = JSON.parse(
-    readFileSync(resolve(packageDirectory, "..", "..", "server.json"), "utf8")
+    readFileSync(join(repoRoot, "server.json"), "utf8")
   ) as {
     name?: string;
     description?: string;
