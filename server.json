@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.lab94/frenchie-skill",
+  "description": "Frenchie — your agent's best friend. An MCP-first multimodal utility that makes AI agents more capable. Today: OCR for PDFs/images and transcription for audio/video into clean Markdown, plus image generation from text prompts. Next releases: file extraction (Excel → Markdown) and Markdown-to-file generation.",
+  "repository": {
+    "url": "https://github.com/Lab94/frenchie-skill",
+    "source": "github"
+  },
+  "version": "0.4.0",
+  "websiteUrl": "https://getfrenchie.dev",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@lab94/frenchie",
+      "version": "0.4.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "npx",
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        },
+        {
+          "type": "positional",
+          "value": "@lab94/frenchie@0.4.0"
+        },
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "FRENCHIE_API_KEY",
+          "description": "Your Frenchie API key (starts with fr_). Create one at https://getfrenchie.dev/dashboard/api-keys — first signup comes with 100 free credits.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.getfrenchie.dev",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer fr_... — your Frenchie API key",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+# Smithery discovery metadata for @lab94/frenchie.
+#
+# Consumed by https://smithery.ai when scanning the npm package / public
+# mirror (Lab94/frenchie-skill). For HTTP-endpoint scans Smithery also falls
+# back to the static server card served at
+# https://mcp.getfrenchie.dev/.well-known/mcp/server-card.json — see
+# apps/mcp/src/server-card.ts for that source of truth.
+#
+# Stdio wiring: the Smithery runner invokes `commandFunction(config)` with
+# the user's submitted config and uses the returned { command, args, env } to
+# spawn the process. The stdio runtime in `packages/skill/src/mcp.ts` only
+# reads `process.env.FRENCHIE_API_KEY`, so we map it here explicitly — the
+# implicit "config key equals env var name" fallback is not guaranteed
+# across Smithery client versions.
+
+startCommand:
+  type: stdio
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "@lab94/frenchie@latest", "mcp"],
+      env: {
+        FRENCHIE_API_KEY: config.FRENCHIE_API_KEY
+      }
+    })
+
+configSchema:
+  type: object
+  required:
+    - FRENCHIE_API_KEY
+  properties:
+    FRENCHIE_API_KEY:
+      type: string
+      title: Frenchie API key
+      description: >-
+        Your Frenchie API key (starts with `fr_`). Create one at
+        https://getfrenchie.dev/dashboard/api-keys — first signup comes with
+        100 free credits, no credit card required.
+      format: password
+
+# URL-based deployments (HTTP transport at mcp.getfrenchie.dev) pass the same
+# key as an Authorization bearer header. The static server card at
+# /.well-known/mcp/server-card.json declares the `bearer` auth scheme so
+# Smithery's HTTP scanner can find it without running the stdio binary.
+
+metadata:
+  name: Frenchie
+  tagline: Your agent's best friend.
+  description: >-
+    MCP-first multimodal utility that makes AI agents more capable. Today:
+    OCR for PDFs/images and transcription for audio/video into clean Markdown,
+    plus image generation from text prompts. Next releases: file extraction
+    (Excel → Markdown) and Markdown-to-file generation.
+  homepage: https://getfrenchie.dev
+  documentation: https://getfrenchie.dev/docs
+  repository: https://github.com/Lab94/frenchie-skill
+  vendor: LAB94 Co., Ltd.
+  categories:
+    - document-processing
+    - multimodal
+    - ocr
+    - transcription
+    - developer-tools
+  tags:
+    - mcp
+    - ocr
+    - transcription
+    - image-generation
+    - text-to-image
+    - pdf
+    - markdown
+    - audio
+    - video
+    - multimodal
+    - ai-agent

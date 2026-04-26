@@ -1,0 +1,103 @@
+{
+  "name": "@lab94/frenchie",
+  "mcpName": "io.github.lab94/frenchie-skill",
+  "version": "0.4.0",
+  "description": "Frenchie — your agent's best friend. MCP-first multimodal utility and stdio MCP server for agent workflows. Today: OCR for PDFs/images, transcription for audio/video into clean Markdown, and text-to-image generation. Next: file extraction (Excel → Markdown) and Markdown-to-file generation.",
+  "license": "MIT",
+  "homepage": "https://www.getfrenchie.dev/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lab94/frenchie-skill.git"
+  },
+  "bugs": {
+    "url": "https://getfrenchie.dev/docs/troubleshooting"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "lab94-frenchie": "bin/install.cjs"
+  },
+  "files": [
+    "LICENSE",
+    "bin",
+    "dist",
+    "skills",
+    "instructions.md",
+    "commands.md",
+    "config.md",
+    "README.md",
+    "MIGRATION.md",
+    "smithery.yaml"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./mcp-runtime": {
+      "types": "./dist/mcp-runtime.d.ts",
+      "import": "./dist/mcp-runtime.js",
+      "require": "./dist/mcp-runtime.cjs"
+    },
+    "./instructions.md": "./instructions.md",
+    "./commands.md": "./commands.md",
+    "./config.md": "./config.md",
+    "./README.md": "./README.md",
+    "./MIGRATION.md": "./MIGRATION.md",
+    "./package.json": "./package.json"
+  },
+  "keywords": [
+    "frenchie",
+    "lab94",
+    "mcp",
+    "mcp-server",
+    "multimodal",
+    "ocr",
+    "transcription",
+    "image-generation",
+    "text-to-image",
+    "pdf",
+    "audio",
+    "video",
+    "markdown",
+    "file-to-markdown",
+    "skill",
+    "ai-agent",
+    "agent-tools"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.4",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "file-type": "^20.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "eslint": "^9.24.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.58.1"
+  },
+  "packageManager": "pnpm@10.29.3"
+}
