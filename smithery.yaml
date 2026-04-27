@@ -23,6 +23,9 @@ startCommand:
       if (config.FRENCHIE_OUTPUT_DIR) {
         env.FRENCHIE_OUTPUT_DIR = config.FRENCHIE_OUTPUT_DIR;
       }
+      if (config.FRENCHIE_DEFAULT_LANGUAGE) {
+        env.FRENCHIE_DEFAULT_LANGUAGE = config.FRENCHIE_DEFAULT_LANGUAGE;
+      }
       return {
         command: "npx",
         args: ["-y", "@lab94/frenchie@latest", "mcp"],
@@ -52,6 +55,14 @@ configSchema:
         use the MCP server's working directory. Recommended for GUI-spawned
         agents (Claude Desktop, etc.) so results land next to your project
         instead of `$HOME`.
+    FRENCHIE_DEFAULT_LANGUAGE:
+      type: string
+      title: Default transcription language (optional)
+      description: >-
+        ISO 639-1 language hint (e.g. `th`, `en`, `ja`) applied to
+        `transcribe_to_markdown` when the tool input does not specify a
+        language. Tool-level language always wins. Leave blank to let the
+        provider auto-detect.
 
 # URL-based deployments (HTTP transport at mcp.getfrenchie.dev) pass the same
 # key as an Authorization bearer header. The static server card at

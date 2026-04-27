@@ -20,6 +20,13 @@ export interface McpServerOptions {
   outputDir?: string;
   transportMode?: "stdio" | "http";
   fetchFn?: typeof fetch;
+  /**
+   * Optional fallback language code applied to transcribe_to_markdown when the
+   * tool input does not provide `language`. Tool-level `language` always wins.
+   * Stdio mode reads this from `FRENCHIE_DEFAULT_LANGUAGE`; HTTP mode reads it
+   * from the `X-Frenchie-Default-Language` request header per session.
+   */
+  defaultLanguage?: string;
 }
 
 export interface HttpApp {
@@ -27,7 +34,19 @@ export interface HttpApp {
   close: () => Promise<void>;
 }
 
-export type McpServerFactory = (httpApiKey?: string) => McpServer;
+export type McpServerFactory = (httpApiKey?: string, defaultLanguage?: string) => McpServer;
+
+const LANGUAGE_HINT_PATTERN = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?$/;
+
+export function normalizeLanguageHint(value: string | string[] | undefined | null): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (typeof candidate !== "string") return undefined;
+  const trimmed = candidate.trim();
+  if (!trimmed) return undefined;
+  if (!LANGUAGE_HINT_PATTERN.test(trimmed)) return undefined;
+  return trimmed;
+}
 
 export function createMcpServer(options: McpServerOptions): McpServer {
   const server = new McpServer({
@@ -41,6 +60,7 @@ export function createMcpServer(options: McpServerOptions): McpServer {
       fetchFn: options.fetchFn
     }),
     defaultApiKey: options.defaultApiKey,
+    defaultLanguage: normalizeLanguageHint(options.defaultLanguage),
     smartWaitIntervalMs: options.smartWaitIntervalMs ?? DEFAULT_SMART_WAIT_INTERVAL_MS,
     smartWaitTimeoutMs: options.smartWaitTimeoutMs ?? DEFAULT_SMART_WAIT_TIMEOUT_MS,
     outputDir: options.outputDir ?? process.cwd(),
@@ -167,7 +187,8 @@ export function createHttpApp(createServer: McpServerFactory): HttpApp {
         }
 
         const bearerToken = extractBearerToken(req.headers.authorization);
-        const server = createServer(bearerToken);
+        const defaultLanguage = normalizeLanguageHint(req.headers["x-frenchie-default-language"]);
+        const server = createServer(bearerToken, defaultLanguage);
         let capturedSessionId: string | undefined;
         const transport = new StreamableHTTPServerTransport({
           enableJsonResponse: true,
@@ -228,7 +249,8 @@ export function createHttpApp(createServer: McpServerFactory): HttpApp {
   app.get("/sse", async (req, res) => {
     try {
       const bearerToken = extractBearerToken(req.headers.authorization);
-      const server = createServer(bearerToken);
+      const defaultLanguage = normalizeLanguageHint(req.headers["x-frenchie-default-language"]);
+      const server = createServer(bearerToken, defaultLanguage);
       const transport = new SSEServerTransport("/sse/message", res);
 
       // Send SSE keepalive comments every 15s to prevent proxies and clients

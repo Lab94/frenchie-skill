@@ -30,6 +30,7 @@ async function main(): Promise<void> {
     createMcpServer({
       apiUrl,
       defaultApiKey: process.env.FRENCHIE_API_KEY,
+      defaultLanguage: process.env.FRENCHIE_DEFAULT_LANGUAGE,
       outputDir,
       transportMode: "stdio"
     })

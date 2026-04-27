@@ -35,6 +35,8 @@ import { prepareOcrLocalFile, prepareTranscriptionLocalFile } from "./local-file
 export interface ToolOptions {
   apiClient: ApiClient;
   defaultApiKey?: string;
+  /** Already-validated session-level language fallback for transcription jobs. */
+  defaultLanguage?: string;
   smartWaitIntervalMs: number;
   smartWaitTimeoutMs: number;
   outputDir: string;
@@ -639,7 +641,10 @@ async function runTranscriptionTool(
   const args = mcpTranscriptionInputSchema.parse(rawArgs) as TranscribeToMarkdownToolInput;
   assertFilePathAllowed(args, options.transportMode);
   const apiKey = resolveApiKey(args.api_key, options.defaultApiKey);
-  const transcriptionOptions = args.language ? { language: args.language } : undefined;
+  // Tool-level `language` always wins; otherwise fall back to the
+  // session-level default (FRENCHIE_DEFAULT_LANGUAGE env / X-Frenchie-Default-Language header).
+  const resolvedLanguage = args.language ?? options.defaultLanguage;
+  const transcriptionOptions = resolvedLanguage ? { language: resolvedLanguage } : undefined;
 
   if (isFilePathInput(args)) {
     const file = await prepareTranscriptionLocalFile(args.file_path);

@@ -2,7 +2,27 @@
 
 > Latest web version with cross-links to troubleshooting and agent guides: [getfrenchie.dev/docs/migrate](https://getfrenchie.dev/docs/migrate). This file ships inside the npm tarball and is kept in sync at publish time.
 
-> Upgrading from 0.1.x, 0.2.x, 0.3.0, 0.3.1, 0.3.2, 0.4.0, or 0.4.1? Follow the matching section below, in order. Each section is self-contained — do the steps in order and you'll be back on the happy path.
+> Upgrading from 0.1.x, 0.2.x, 0.3.0, 0.3.1, 0.3.2, 0.4.0, 0.4.1, or 0.4.2? Follow the matching section below, in order. Each section is self-contained — do the steps in order and you'll be back on the happy path.
+
+## 0.4.2 → 0.4.3
+
+0.4.3 adds an optional default-language hint for `transcribe_to_markdown`. Tool-level `language` always wins; the new hint only kicks in when the tool input does not specify a language.
+
+- **Stdio:** set `FRENCHIE_DEFAULT_LANGUAGE` in the MCP config's `env` block (e.g. `"FRENCHIE_DEFAULT_LANGUAGE": "th"`). Re-run `install` to let the installer wire it, or edit your config by hand.
+- **HTTP (`mcp.getfrenchie.dev`):** send `X-Frenchie-Default-Language: th` alongside `Authorization: Bearer fr_...`. Per-session header overrides any process-wide default.
+
+Skip this section entirely if you don't want a fallback — auto-detection is still the default.
+
+### Upgrade steps
+
+```bash
+cd <your project>
+npx @lab94/frenchie@latest install
+```
+
+Restart your agent after `install` finishes so it re-reads the pinned `@lab94/frenchie@0.4.3` spec.
+
+---
 
 ## 0.4.1 → 0.4.2
 
