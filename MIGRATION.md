@@ -2,7 +2,22 @@
 
 > Latest web version with cross-links to troubleshooting and agent guides: [getfrenchie.dev/docs/migrate](https://getfrenchie.dev/docs/migrate). This file ships inside the npm tarball and is kept in sync at publish time.
 
-> Upgrading from 0.1.x, 0.2.x, 0.3.0, 0.3.1, 0.3.2, or 0.4.0? Follow the matching section below, in order. Each section is self-contained — do the steps in order and you'll be back on the happy path.
+> Upgrading from 0.1.x, 0.2.x, 0.3.0, 0.3.1, 0.3.2, 0.4.0, or 0.4.1? Follow the matching section below, in order. Each section is self-contained — do the steps in order and you'll be back on the happy path.
+
+## 0.4.1 → 0.4.2
+
+0.4.2 is a metadata-only release that fixes the Official MCP Registry namespace (`io.github.Lab94/frenchie-skill`) so the skill listing publishes correctly. No tool semantics, response shapes, or installer behaviour change. Re-run `install` to pick up the new pinned version, but nothing else needs to change.
+
+### Upgrade steps
+
+```bash
+cd <your project>
+npx @lab94/frenchie@latest install
+```
+
+Restart your agent after `install` finishes so it re-reads the pinned `@lab94/frenchie@0.4.2` spec.
+
+---
 
 ## 0.4.0 → 0.4.1
 

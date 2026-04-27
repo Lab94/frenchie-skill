@@ -1,5 +1,7 @@
 [![Frenchie — your agent's best friend.](https://getfrenchie.dev/brand/frenchie-readme-wordmark.svg)](https://getfrenchie.dev)
 
+[![smithery badge](https://smithery.ai/badge/lab94/frenchie)](https://smithery.ai/servers/lab94/frenchie)
+
 # @lab94/frenchie
 
 **Frenchie — your agent's best friend.**
