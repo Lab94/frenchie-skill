@@ -220,7 +220,9 @@ test("package metadata and registry files advertise the current capability set",
   const serverJson = JSON.parse(
     readFileSync(join(repoRoot, "server.json"), "utf8")
   ) as {
+    $schema?: string;
     name?: string;
+    title?: string;
     description?: string;
     version?: string;
     packages?: Array<{
@@ -239,13 +241,22 @@ test("package metadata and registry files advertise the current capability set",
   assert.ok(packageJson.keywords?.includes("image-generation"));
   assert.ok(packageJson.keywords?.includes("text-to-image"));
 
+  assert.equal(
+    serverJson.$schema,
+    "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json"
+  );
   assert.match(smithery, /image generation/i);
   assert.match(smithery, /@lab94\/frenchie@latest/);
   assert.match(smithery, /text-to-image/i);
 
   const npmPackage = serverJson.packages?.find((entry) => entry.identifier === "@lab94/frenchie");
   assert.equal(serverJson.name, MCP_REGISTRY_NAME);
+  assert.equal(serverJson.title, "Frenchie");
   assert.match(serverJson.description ?? "", /image generation/i);
+  assert.ok(
+    (serverJson.description ?? "").length <= 100,
+    "Official MCP Registry server.json descriptions must stay within 100 characters"
+  );
   assert.equal(serverJson.version, packageJson.version);
   assert.equal(npmPackage?.version, packageJson.version);
   assert.deepEqual(

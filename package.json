@@ -1,7 +1,7 @@
 {
   "name": "@lab94/frenchie",
   "mcpName": "io.github.lab94/frenchie-skill",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Frenchie — your agent's best friend. MCP-first multimodal utility and stdio MCP server for agent workflows. Today: OCR for PDFs/images, transcription for audio/video into clean Markdown, and text-to-image generation. Next: file extraction (Excel → Markdown) and Markdown-to-file generation.",
   "license": "MIT",
   "homepage": "https://www.getfrenchie.dev/",

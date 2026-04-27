@@ -45,14 +45,39 @@ const HTTP_FILE_PATH_ERROR =
   "HTTP transport does not accept file_path. Upload the file first and call the tool again with uploaded_file_reference.";
 
 const createJobToolInputShape = {
-  file_path: z.string().min(1).optional(),
-  uploaded_file_reference: z.string().min(1).optional(),
-  api_key: z.string().min(1).optional()
+  file_path: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Absolute local file path. Stdio transport only — over HTTP, upload via upload_file first and pass uploaded_file_reference instead."
+    ),
+  uploaded_file_reference: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Object key returned by upload_file. Required for HTTP transport; ignored when file_path is provided in stdio."
+    ),
+  api_key: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional Frenchie API key (fr_...). Falls back to the FRENCHIE_API_KEY env var when omitted."
+    )
 };
 
 const transcriptionToolInputShape = {
   ...createJobToolInputShape,
-  language: z.string().min(2).max(10).optional().describe("ISO 639-1 language code (e.g. 'th', 'en', 'ja') for better accuracy; omit for auto-detection")
+  language: z
+    .string()
+    .min(2)
+    .max(10)
+    .optional()
+    .describe(
+      "Optional ISO 639-1 language code (e.g. 'th', 'en', 'ja') for better accuracy; omit for auto-detection."
+    )
 };
 
 const generateImageToolInputShape = {
@@ -96,24 +121,68 @@ const generateImageToolInputShape = {
       "Stdio mode only: absolute directory under which .frenchie/<slug>/generated.<ext> is saved. " +
       "Defaults to the MCP server's process cwd. Recommended: pass your workspace root so the image lands next to your work instead of $HOME."
     ),
-  api_key: z.string().min(1).optional()
+  api_key: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional Frenchie API key (fr_...). Falls back to the FRENCHIE_API_KEY env var when omitted."
+    )
 };
 
 const getJobResultToolInputShape = {
-  job_id: z.string().min(1),
-  api_key: z.string().min(1).optional()
+  job_id: z
+    .string()
+    .min(1)
+    .describe(
+      "Job ID returned by ocr_to_markdown, transcribe_to_markdown, or generate_image when status was 'processing'."
+    ),
+  api_key: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional Frenchie API key (fr_...). Falls back to the FRENCHIE_API_KEY env var when omitted."
+    )
 };
 
 const fetchResultFileToolInputShape = {
-  object_key: z.string().min(1).describe("The object key from a frenchie-result: reference in the result markdown"),
-  api_key: z.string().min(1).optional()
+  object_key: z
+    .string()
+    .min(1)
+    .describe("The object key parsed from a frenchie-result:<objectKey> reference in the result markdown."),
+  api_key: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional Frenchie API key (fr_...). Falls back to the FRENCHIE_API_KEY env var when omitted."
+    )
 };
 
 const uploadFileToolInputShape = {
-  filename: z.string().min(1).max(255).describe("Original filename with extension (e.g. 'report.pdf')"),
-  file_size: z.number().int().positive().max(FILE_SIZE_LIMIT_BYTES).describe("File size in bytes"),
-  mime_type: z.string().min(1).describe("MIME type (e.g. 'application/pdf', 'audio/mpeg')"),
-  api_key: z.string().min(1).optional()
+  filename: z
+    .string()
+    .min(1)
+    .max(255)
+    .describe("Original filename with extension (e.g. 'report.pdf')."),
+  file_size: z
+    .number()
+    .int()
+    .positive()
+    .max(FILE_SIZE_LIMIT_BYTES)
+    .describe("File size in bytes."),
+  mime_type: z
+    .string()
+    .min(1)
+    .describe("MIME type (e.g. 'application/pdf', 'audio/mpeg')."),
+  api_key: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Optional Frenchie API key (fr_...). Falls back to the FRENCHIE_API_KEY env var when omitted."
+    )
 };
 
 const uploadFileOutputShape = {
@@ -211,9 +280,17 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "ocr_to_markdown",
     {
+      title: "OCR to Markdown",
       description: "Convert PDF/image files into Markdown through Frenchie",
       inputSchema: createJobToolInputShape,
-      outputSchema: toolResultOutputShape
+      outputSchema: toolResultOutputShape,
+      annotations: {
+        title: "OCR to Markdown",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true
+      }
     },
     withToolErrors(async (args: unknown) => {
       const { result, jobId, friendlyName, filePath, apiKey } = await runOcrTool(args, options);
@@ -228,9 +305,17 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "transcribe_to_markdown",
     {
+      title: "Transcribe to Markdown",
       description: "Convert audio/video files into Markdown transcripts through Frenchie. Set language (ISO 639-1 code, e.g. 'th', 'en', 'ja') for better accuracy; omit for auto-detection.",
       inputSchema: transcriptionToolInputShape,
-      outputSchema: toolResultOutputShape
+      outputSchema: toolResultOutputShape,
+      annotations: {
+        title: "Transcribe to Markdown",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true
+      }
     },
     withToolErrors(async (args: unknown) => {
       const { result, jobId, friendlyName, filePath, apiKey } = await runTranscriptionTool(args, options);
@@ -245,12 +330,20 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "generate_image",
     {
+      title: "Generate Image",
       description:
         "Generate a single image from a text prompt through Frenchie (gpt-image-2). " +
         "Required: prompt. Optional: style (free-text style direction), size, quality, format, background. " +
         "stdio mode auto-saves the image to .frenchie/<slug>/generated.<ext>; HTTP mode returns a presigned imageUrl that the agent should download for the user.",
       inputSchema: generateImageToolInputShape,
-      outputSchema: toolResultOutputShape
+      outputSchema: toolResultOutputShape,
+      annotations: {
+        title: "Generate Image",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true
+      }
     },
     withToolErrors(async (args: unknown) => {
       const { input, response, apiKey, outputDir } = await runImageGenerationTool(args, options);
@@ -267,9 +360,17 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "get_job_result",
     {
+      title: "Get Job Result",
       description: "Fetch the latest async Frenchie job result",
       inputSchema: getJobResultToolInputShape,
-      outputSchema: toolResultOutputShape
+      outputSchema: toolResultOutputShape,
+      annotations: {
+        title: "Get Job Result",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true
+      }
     },
     withToolErrors(async (args: unknown) => {
       const parsed = mcpGetJobResultInputSchema.parse(args) as GetJobResultToolInput;
@@ -328,12 +429,20 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "upload_file",
     {
+      title: "Upload File (HTTP)",
       description:
         "Get a presigned upload URL for use with ocr_to_markdown or transcribe_to_markdown in HTTP mode. " +
         "After calling this tool, PUT the file to upload_url (with the correct Content-Type header), " +
         "then pass object_key as uploaded_file_reference to the processing tool.",
       inputSchema: uploadFileToolInputShape,
-      outputSchema: uploadFileOutputShape
+      outputSchema: uploadFileOutputShape,
+      annotations: {
+        title: "Upload File (HTTP)",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true
+      }
     },
     withToolErrors(async (args: unknown) => {
       const input = z.object(uploadFileToolInputShape).parse(args);
@@ -376,14 +485,22 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   registerTool(
     "fetch_result_file",
     {
+      title: "Fetch Result File (HTTP)",
       description:
         "Get a temporary download URL for a result file from OCR/transcription output. " +
         "Use this to download images referenced as frenchie-result: in the result markdown.",
       inputSchema: fetchResultFileToolInputShape,
       outputSchema: {
-        download_url: z.string(),
-        filename: z.string(),
-        expires_in: z.number().int().positive()
+        download_url: z.string().describe("Temporary HTTPS download URL for the result file."),
+        filename: z.string().describe("Suggested filename derived from the original object key."),
+        expires_in: z.number().int().positive().describe("URL expiry in seconds (typically 900).")
+      },
+      annotations: {
+        title: "Fetch Result File (HTTP)",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true
       }
     },
     withToolErrors(async (args: unknown) => {

@@ -16,13 +16,19 @@
 startCommand:
   type: stdio
   commandFunction: |-
-    (config) => ({
-      command: "npx",
-      args: ["-y", "@lab94/frenchie@latest", "mcp"],
-      env: {
+    (config) => {
+      const env = {
         FRENCHIE_API_KEY: config.FRENCHIE_API_KEY
+      };
+      if (config.FRENCHIE_OUTPUT_DIR) {
+        env.FRENCHIE_OUTPUT_DIR = config.FRENCHIE_OUTPUT_DIR;
       }
-    })
+      return {
+        command: "npx",
+        args: ["-y", "@lab94/frenchie@latest", "mcp"],
+        env
+      };
+    }
 
 configSchema:
   type: object
@@ -37,6 +43,15 @@ configSchema:
         https://getfrenchie.dev/dashboard/api-keys — first signup comes with
         100 free credits, no credit card required.
       format: password
+    FRENCHIE_OUTPUT_DIR:
+      type: string
+      title: Output directory (optional)
+      description: >-
+        Absolute path of the workspace directory where Frenchie writes
+        `.frenchie/<name>/result.md` and any embedded images. Leave blank to
+        use the MCP server's working directory. Recommended for GUI-spawned
+        agents (Claude Desktop, etc.) so results land next to your project
+        instead of `$HOME`.
 
 # URL-based deployments (HTTP transport at mcp.getfrenchie.dev) pass the same
 # key as an Authorization bearer header. The static server card at

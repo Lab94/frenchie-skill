@@ -1,6 +1,6 @@
 export const SKILL_PACKAGE_NAME = "@lab94/frenchie";
 export const MCP_SERVER_NAME = "frenchie-mcp";
-export const MCP_SERVER_VERSION = "0.4.0";
+export const MCP_SERVER_VERSION = "0.4.1";
 export const MCP_REGISTRY_NAME = "io.github.lab94/frenchie-skill";
 
 export const SKILL_COMMANDS = [
