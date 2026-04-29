@@ -390,6 +390,11 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
       });
 
       if (rawResult.type === "image_generation") {
+        if (rawResult.status === "failed") {
+          const job = await options.apiClient.getJob(apiKey, jobId);
+          throw new Error(job.errorMessage ?? "Image generation job failed.");
+        }
+
         const synthesised = synthesiseImageGenerationResponse(jobId, rawResult);
         const folderName = imageGenerationFriendlyName(
           rawResult.imageDetail?.prompt ?? jobId

@@ -113,7 +113,7 @@ test("npm publish metadata points only at public surfaces", () => {
   // is the public mirror submitted to directories). Using a `io.getfrenchie/*`
   // reverse-DNS form would require DNS-based verification of getfrenchie.dev
   // (not yet wired), so GitHub auth is the verifiable path today.
-  assert.equal(packageJson.mcpName, "io.github.lab94/frenchie-skill");
+  assert.equal(packageJson.mcpName, "io.github.Lab94/frenchie-skill");
 
   // Keywords must cover current capability surface (OCR, transcription) AND
   // signal the broader multimodal direction so directory search picks up

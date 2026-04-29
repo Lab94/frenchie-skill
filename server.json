@@ -7,13 +7,13 @@
     "url": "https://github.com/Lab94/frenchie-skill",
     "source": "github"
   },
-  "version": "0.4.3",
+  "version": "0.4.4",
   "websiteUrl": "https://getfrenchie.dev",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@lab94/frenchie",
-      "version": "0.4.3",
+      "version": "0.4.4",
       "transport": {
         "type": "stdio"
       },
@@ -25,7 +25,7 @@
         },
         {
           "type": "positional",
-          "value": "@lab94/frenchie@0.4.3"
+          "value": "@lab94/frenchie@0.4.4"
         },
         {
           "type": "positional",
