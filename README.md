@@ -6,13 +6,13 @@
 
 **Frenchie — your agent's best friend.**
 
-Install Frenchie in your coding agent with one command. Read PDFs and images, transcribe audio and video, and generate images from text prompts — no plumbing required.
+Install Frenchie in your coding agent with one command. Read PDFs and images, transcribe audio and video, extract Office/CSV files to Markdown, and generate images from text prompts — no plumbing required.
 
 > **Upgrading from 0.1.x or 0.2.x?** See [MIGRATION.md](./MIGRATION.md) for the breaking changes in 0.3.0 (stdio metadata-only responses, absolute-path MCP configs, new `mcp --help` / `--selftest` flags).
 
 This package ships:
 
-- The Frenchie **skill pack** (`/ocr`, `/transcribe`, `/generate-image`, `/frenchie-status` commands + HTTP/stdio guidance for agents)
+- The Frenchie **skill pack** (`/ocr`, `/transcribe`, `/extract`, `/generate-image`, `/frenchie-status` commands + HTTP/stdio guidance for agents)
 - The Frenchie **stdio MCP server** (`lab94-frenchie mcp`) bundled for `npx`
 - An **installer** that wires both into your agent's config file
 
@@ -36,7 +36,7 @@ From the root of your project:
 npx @lab94/frenchie install --api-key fr_your_key_here
 ```
 
-The installer auto-detects your agent, copies the skill files, and writes a project-scoped MCP config so your agent can call `ocr_to_markdown`, `transcribe_to_markdown`, or `generate_image`. OCR/transcription results are saved to `.frenchie/<name>/result.md` automatically; generated images are saved to `.frenchie/<slug>/generated.<ext>`.
+The installer auto-detects your agent, copies the skill files, and writes a project-scoped MCP config so your agent can call `ocr_to_markdown`, `transcribe_to_markdown`, `extract_to_markdown`, or `generate_image`. OCR/transcription/extraction results are saved to `.frenchie/<name>/result.md` automatically; generated images are saved to `.frenchie/<slug>/generated.<ext>`.
 
 To target a specific agent:
 
@@ -76,7 +76,7 @@ URL:    https://mcp.getfrenchie.dev
 Header: Authorization: Bearer fr_your_key_here
 ```
 
-The same `@lab94/frenchie` skill files work in HTTP mode — install them once with `install --agent <name>` and the included SKILL.md will tell the agent to upload files via `upload_file` before calling OCR/transcription. Image generation does not need an upload step in HTTP mode; it returns a short-lived `imageUrl` that the agent should download for the user.
+The same `@lab94/frenchie` skill files work in HTTP mode — install them once with `install --agent <name>` and the included SKILL.md will tell the agent to upload files via `upload_file` before calling OCR/transcription/extraction. Image generation does not need an upload step in HTTP mode; it returns a short-lived `imageUrl` that the agent should download for the user.
 
 ## What you get
 
@@ -84,6 +84,7 @@ The same `@lab94/frenchie` skill files work in HTTP mode — install them once w
 |---------|-------------|
 | `/ocr <file>` | Parse a PDF or image into Markdown |
 | `/transcribe <file>` | Parse audio or video into a Markdown transcript |
+| `/extract <file>` | Parse DOCX, XLSX, CSV, TSV, or PPTX into Markdown |
 | `/generate-image <prompt>` | Generate a single image from a text prompt |
 | `/frenchie-status` | Check credits and recent jobs |
 
@@ -91,6 +92,7 @@ Under the hood, Frenchie exposes these MCP tools:
 
 - `ocr_to_markdown`
 - `transcribe_to_markdown`
+- `extract_to_markdown`
 - `generate_image`
 - `get_job_result`
 - `upload_file` (HTTP mode only)
@@ -122,6 +124,7 @@ Simple numbers. No subscriptions.
 |--------|------|
 | OCR | 1 credit per page |
 | Transcription | 2 credits per minute |
+| File extraction | 0.25 credits per page, 0.01 credits per row, or 0.5 credits per slide depending on format |
 | Image generation | 20 credits per image |
 
 **$1 = 100 credits.** Credits don't expire.
@@ -135,6 +138,8 @@ Files are processed and deleted. Results expire about 30 minutes after first del
 **OCR:** PDF, PNG, JPG, JPEG, WebP
 
 **Transcription:** MP3, M4A, WAV, MP4, MOV, WebM
+
+**File extraction:** DOCX, XLSX, CSV, TSV, PPTX
 
 **Image generation:** PNG, JPEG, WebP output from text prompts
 

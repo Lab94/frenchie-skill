@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Lab94/frenchie-skill",
   "title": "Frenchie",
-  "description": "OCR, transcription, and image generation for AI agents via MCP.",
+  "description": "OCR, transcription, file extraction, and image generation for AI agents via MCP.",
   "repository": {
     "url": "https://github.com/Lab94/frenchie-skill",
     "source": "github"
   },
-  "version": "0.4.4",
+  "version": "0.4.5",
   "websiteUrl": "https://getfrenchie.dev",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@lab94/frenchie",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "transport": {
         "type": "stdio"
       },
@@ -25,7 +25,7 @@
         },
         {
           "type": "positional",
-          "value": "@lab94/frenchie@0.4.4"
+          "value": "@lab94/frenchie@0.4.5"
         },
         {
           "type": "positional",

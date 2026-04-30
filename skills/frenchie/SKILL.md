@@ -1,14 +1,14 @@
 ---
 name: frenchie
-description: MCP-first multimodal utility that makes agents more capable. Today — OCR (PDF/images → Markdown), transcription (audio/video → Markdown), and image generation (text → PNG). Next — file extraction (Excel → Markdown) and Markdown-to-file generation.
+description: MCP-first multimodal utility that makes agents more capable. Today — OCR (PDF/images → Markdown), transcription (audio/video → Markdown), image generation (text → PNG), and Office/CSV extraction to Markdown. Next — Markdown-to-file generation.
 ---
 
 # Frenchie — Your Agent's Best Friend
 
 Frenchie is an MCP-first multimodal utility that expands what agents can do. When installed via `npx @lab94/frenchie install`, Frenchie runs as a local stdio MCP server and results are auto-saved to `.frenchie/<name>/`. Hosted/web agents connect over HTTP at `https://mcp.getfrenchie.dev` — both transports are supported.
 
-**Shipping today:** OCR for PDFs and images, transcription for audio and video, and image generation from text prompts.
-**Rolling out next:** file extraction (Excel → Markdown) and Markdown-to-file generation (Word, Excel). New tools appear in this skill as they launch.
+**Shipping today:** OCR for PDFs and images, transcription for audio and video, image generation from text prompts, and structured file extraction for Office/CSV files.
+**Rolling out next:** Markdown-to-file generation (Word, Excel). New tools appear in this skill as they launch.
 
 ## MCP Tools
 
@@ -18,6 +18,7 @@ Use the Frenchie MCP server. Never call model provider APIs directly.
 |------|---------|-------|
 | `ocr_to_markdown` | PDF/Image to Markdown | `file_path` (stdio) or `uploaded_file_reference` (HTTP) |
 | `transcribe_to_markdown` | Audio/Video to Markdown | `file_path` (stdio) or `uploaded_file_reference` (HTTP) |
+| `extract_to_markdown` | Word/Excel/CSV/TSV/PowerPoint to Markdown | `file_path` (stdio) or `uploaded_file_reference` (HTTP) |
 | `generate_image` | Text prompt to image | `prompt`, optional `style`/`size`/`quality`/`format`/`background`/`output_dir` |
 | `get_job_result` | Poll async job result | `job_id` |
 | `upload_file` | Get presigned upload URL (HTTP only) | `filename`, `file_size`, `mime_type` |
@@ -39,7 +40,7 @@ Hard rule: in stdio mode the tool response returns **metadata only** (`savedTo`,
 1. Call the `upload_file` MCP tool with `filename`, `file_size` (bytes), and `mime_type`
 2. The tool returns `upload_url`, `object_key`, and `expires_in`
 3. PUT the file to `upload_url` with the correct `Content-Type` header (e.g. via `curl -X PUT -H "Content-Type: application/pdf" -T file.pdf "<upload_url>"`)
-4. Pass `object_key` as `uploaded_file_reference` to `ocr_to_markdown` or `transcribe_to_markdown`
+4. Pass `object_key` as `uploaded_file_reference` to `ocr_to_markdown`, `transcribe_to_markdown`, or `extract_to_markdown`
 
 ## OCR Workflow
 
@@ -61,6 +62,16 @@ Supported formats: PDF, PNG, JPG/JPEG, WebP
 4. If `status: "processing"` — store `jobId`, then poll with `get_job_result`
 
 Supported formats: MP3, WAV, M4A, MP4, MOV, WebM
+
+## Extraction Workflow
+
+1. **HTTP:** NEVER send `file_path`. Upload first, then call `extract_to_markdown` with `uploaded_file_reference`
+   **stdio:** call `extract_to_markdown` with `file_path` (absolute path to local file)
+2. If `status: "done"` in HTTP mode — persist the final Markdown to `.frenchie/{name}/result.md` before concluding the task
+3. If `status: "done"` in stdio mode — the server has already written `.frenchie/<name>/result.md`. The response contains `savedTo`, `wordCount`, and `imageCount` — read the file with your own file tool only if the task needs the content
+4. If `status: "processing"` — store `jobId`, then poll with `get_job_result`
+
+Supported formats: DOCX, XLSX, CSV, TSV, PPTX
 
 ## Image Generation Workflow
 

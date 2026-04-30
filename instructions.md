@@ -1,6 +1,6 @@
 # Frenchie Skill Instructions
 
-Frenchie is an MCP-first multimodal utility that makes agents more capable. Today: OCR (PDF/images → Markdown), transcription (audio/video → Markdown), and image generation (text → PNG). Next releases: file extraction (Excel → Markdown) and Markdown-to-file generation. These instructions cover the currently-shipping tools — new capabilities will be added here as they launch.
+Frenchie is an MCP-first multimodal utility that makes agents more capable. Today: OCR (PDF/images → Markdown), transcription (audio/video → Markdown), image generation (text → PNG), and Office/CSV extraction to Markdown. Next release: Markdown-to-file generation.
 
 ## Primary path
 
@@ -12,6 +12,7 @@ Use the Frenchie MCP server first. The recommended local install is `npx @lab94/
    - `upload_file` — get a presigned upload URL (HTTP mode only)
    - `ocr_to_markdown`
    - `transcribe_to_markdown`
+   - `extract_to_markdown`
    - `generate_image`
    - `get_job_result`
    - `fetch_result_file` (HTTP mode only — download result images)
@@ -29,7 +30,7 @@ Hard rule: HTTP mode MUST persist the final Markdown to `.frenchie/{name}/result
 1. Call the `upload_file` MCP tool with `filename`, `file_size` (bytes), and `mime_type`
 2. The tool returns `upload_url`, `object_key`, and `expires_in`
 3. PUT the file to `upload_url` with the correct `Content-Type` header (e.g. via `curl -X PUT -H "Content-Type: application/pdf" -T file.pdf "<upload_url>"`)
-4. Pass `object_key` as `uploaded_file_reference` to `ocr_to_markdown` or `transcribe_to_markdown`
+4. Pass `object_key` as `uploaded_file_reference` to `ocr_to_markdown`, `transcribe_to_markdown`, or `extract_to_markdown`
 
 ### How to detect transport mode
 
@@ -60,6 +61,18 @@ Supported formats: PDF, PNG, JPG/JPEG, WebP
 - If the tool returns `status: "processing"`, poll with `get_job_result`
 
 Supported formats: MP3, M4A, WAV, MP4, MOV, WebM
+
+## Extraction workflow
+
+- **HTTP:** NEVER send `file_path`. Upload first, then call `extract_to_markdown` with `uploaded_file_reference`
+- **stdio:** call `extract_to_markdown` with `file_path`
+- optional `api_key` only when the environment is not already configured
+- If the tool returns `status: "done"` in HTTP mode, persist the final Markdown to `.frenchie/{name}/result.md` before concluding the task
+- If the tool returns `status: "done"` in **stdio** mode, the response is **metadata-only** (`savedTo`, `wordCount`, `imageCount`, `creditsUsed`) — no inline `markdown` field. The server already wrote `result.md` to the path in `savedTo`. Read that file with your own file-reading tool if the task needs the content. Do NOT call `extract_to_markdown` again hoping to get markdown inline — it will reprocess and burn credits.
+- If the tool returns `status: "processing"`, poll with `get_job_result`
+
+Supported formats: DOCX, XLSX, CSV, TSV, PPTX.
+Size caps: Office files up to 50 MB; CSV/TSV up to 20 MB.
 
 ## Image generation workflow
 

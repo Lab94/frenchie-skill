@@ -10,12 +10,14 @@ import {
   RESULT_RETENTION_MINUTES,
   SUPPORTED_MIME_TYPES,
   imageGenerationJobCreateSchema,
+  mcpExtractionInputSchema,
   mcpFetchResultFileInputSchema,
   mcpGetJobResultInputSchema,
   mcpOcrInputSchema,
   mcpToolResultSchema,
   mcpTranscriptionInputSchema,
   type FetchResultFileToolInput,
+  type ExtractToMarkdownToolInput,
   type GetJobResultToolInput,
   type CapabilityResult,
   type ImageGenerationJobCreateResponse,
@@ -30,7 +32,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, relative } from "node:path";
 import { z } from "zod";
 import { ApiClient, ApiError } from "./api-client.js";
-import { prepareOcrLocalFile, prepareTranscriptionLocalFile } from "./local-file.js";
+import { prepareExtractionLocalFile, prepareOcrLocalFile, prepareTranscriptionLocalFile } from "./local-file.js";
 
 export interface ToolOptions {
   apiClient: ApiClient;
@@ -189,7 +191,7 @@ const uploadFileToolInputShape = {
 
 const uploadFileOutputShape = {
   upload_url: z.string().url().describe("Presigned URL — PUT the file here with the correct Content-Type header"),
-  object_key: z.string().min(1).describe("Pass this as uploaded_file_reference to ocr_to_markdown or transcribe_to_markdown"),
+  object_key: z.string().min(1).describe("Pass this as uploaded_file_reference to ocr_to_markdown, transcribe_to_markdown, or extract_to_markdown"),
   expires_in: z.number().int().positive().describe("URL expiry in seconds")
 };
 
@@ -221,7 +223,7 @@ const imageResultOutputShape = z.object({
 const toolResultOutputShape = {
   status: z.enum(["done", "processing"]),
   jobId: z.string().min(1).optional(),
-  creditsUsed: z.number().int().nonnegative().optional(),
+  creditsUsed: z.number().finite().nonnegative().optional(),
   resultExpiresAt: z.string().datetime().optional(),
   estimatedCompletion: z.string().datetime().optional(),
   result: z.discriminatedUnion("kind", [markdownResultOutputShape, imageResultOutputShape]).optional()
@@ -360,6 +362,33 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
   );
 
   registerTool(
+    "extract_to_markdown",
+    {
+      title: "Extract to Markdown",
+      description:
+        "Extract structured documents (.docx, .xlsx, .csv, .tsv, .pptx) into Markdown through Frenchie. " +
+        "stdio mode auto-saves the result to .frenchie/<name>/result.md; HTTP mode returns inline Markdown.",
+      inputSchema: createJobToolInputShape,
+      outputSchema: toolResultOutputShape,
+      annotations: {
+        title: "Extract to Markdown",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true
+      }
+    },
+    withToolErrors(async (args: unknown) => {
+      const { result, jobId, friendlyName, filePath, apiKey } = await runExtractTool(args, options);
+      const outDir = filePath ? dirname(filePath) : options.outputDir;
+      if (filePath) rememberOutputDir(jobId, outDir);
+      if (result.status === "processing" && friendlyName) rememberFriendlyName(jobId, friendlyName);
+      rememberApiKey(jobId, apiKey);
+      return toToolSuccess(result, buildCtx(apiKey, jobId, friendlyName ?? jobId, outDir));
+    })
+  );
+
+  registerTool(
     "get_job_result",
     {
       title: "Get Job Result",
@@ -438,7 +467,7 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
     {
       title: "Upload File (HTTP)",
       description:
-        "Get a presigned upload URL for use with ocr_to_markdown or transcribe_to_markdown in HTTP mode. " +
+        "Get a presigned upload URL for use with ocr_to_markdown, transcribe_to_markdown, or extract_to_markdown in HTTP mode. " +
         "After calling this tool, PUT the file to upload_url (with the correct Content-Type header), " +
         "then pass object_key as uploaded_file_reference to the processing tool.",
       inputSchema: uploadFileToolInputShape,
@@ -482,7 +511,7 @@ export function registerTools(server: McpServer, options: ToolOptions): void {
               `object_key: ${presign.objectKey}\n` +
               `expires_in: ${presign.expiresIn}\n\n` +
               `Next step: PUT the file to upload_url with header "Content-Type: ${input.mime_type}", ` +
-              `then call ocr_to_markdown or transcribe_to_markdown with uploaded_file_reference="${presign.objectKey}".`
+              `then call ocr_to_markdown, transcribe_to_markdown, or extract_to_markdown with uploaded_file_reference="${presign.objectKey}".`
           }
         ]
       };
@@ -666,6 +695,29 @@ async function runTranscriptionTool(
   const response = await options.apiClient.createTranscriptionJob(apiKey, {
     objectKey: args.uploaded_file_reference,
     options: transcriptionOptions
+  });
+  const result = await resolveCreateJobResponse(apiKey, response, options, friendlyNameFromPath(args.uploaded_file_reference));
+  return { ...result, apiKey };
+}
+
+async function runExtractTool(rawArgs: unknown, options: ToolOptions): Promise<ToolRunResult> {
+  const args = mcpExtractionInputSchema.parse(rawArgs) as ExtractToMarkdownToolInput;
+  assertFilePathAllowed(args, options.transportMode);
+  const apiKey = resolveApiKey(args.api_key, options.defaultApiKey);
+
+  if (isFilePathInput(args)) {
+    const file = await prepareExtractionLocalFile(args.file_path);
+    const upload = await options.apiClient.uploadFile(apiKey, file);
+    const response = await options.apiClient.createExtractionJob(apiKey, {
+      objectKey: upload.objectKey,
+      mimeType: file.mimeType
+    });
+    const result = await resolveCreateJobResponse(apiKey, response, options, friendlyNameFromPath(args.file_path));
+    return { ...result, apiKey, filePath: args.file_path };
+  }
+
+  const response = await options.apiClient.createExtractionJob(apiKey, {
+    objectKey: args.uploaded_file_reference
   });
   const result = await resolveCreateJobResponse(apiKey, response, options, friendlyNameFromPath(args.uploaded_file_reference));
   return { ...result, apiKey };
@@ -1194,13 +1246,13 @@ function resolveApiKey(inputApiKey: string | undefined, defaultApiKey: string | 
 }
 
 function isFilePathInput(
-  input: OcrToMarkdownToolInput | TranscribeToMarkdownToolInput
+  input: OcrToMarkdownToolInput | TranscribeToMarkdownToolInput | ExtractToMarkdownToolInput
 ): input is Extract<OcrToMarkdownToolInput, { file_path: string }> {
   return "file_path" in input;
 }
 
 function assertFilePathAllowed(
-  input: OcrToMarkdownToolInput | TranscribeToMarkdownToolInput,
+  input: OcrToMarkdownToolInput | TranscribeToMarkdownToolInput | ExtractToMarkdownToolInput,
   transportMode: "stdio" | "http"
 ): void {
   if (transportMode === "http" && isFilePathInput(input)) {

@@ -17,6 +17,7 @@ import {
   MAX_LEDGER_LIST_LIMIT,
   MAX_JOB_LIST_LIMIT,
   RESULT_IMAGE_MIME_TYPES,
+  SUPPORTED_EXTRACTION_MIME_TYPES,
   SUPPORTED_MIME_TYPES,
   SUPPORTED_OCR_MIME_TYPES,
   SUPPORTED_TRANSCRIPTION_MIME_TYPES
@@ -53,6 +54,10 @@ const integerQueryParamSchema = z.preprocess((value) => {
 
   return value;
 }, z.number().int().finite().optional());
+
+const jobTypeSchema = z.enum(["ocr", "transcription", "image_generation", "extraction"]);
+const creditAmountSchema = z.number().finite();
+const nonnegativeCreditAmountSchema = creditAmountSchema.nonnegative();
 
 export const strongPasswordSchema = z
   .string()
@@ -224,6 +229,21 @@ export const transcriptionJobCreateSchema = jobCreateSchema.extend({
   options: transcriptionJobOptionsSchema
 });
 
+export const extractJobCreateSchema = jobCreateSchema.extend({
+  mimeType: z
+    .string()
+    .refine(
+      (value) =>
+        SUPPORTED_EXTRACTION_MIME_TYPES.includes(
+          value as (typeof SUPPORTED_EXTRACTION_MIME_TYPES)[number]
+        ),
+      "Unsupported extraction file type"
+    )
+    .optional()
+});
+
+export type ExtractJobCreateSchema = z.infer<typeof extractJobCreateSchema>;
+
 export const imageGenerationFormatSchema = z.enum(IMAGE_GENERATION_FORMATS);
 export const imageGenerationSizeSchema = z.enum(IMAGE_GENERATION_SIZES);
 export const imageGenerationQualitySchema = z.enum(IMAGE_GENERATION_QUALITIES);
@@ -283,7 +303,7 @@ export const capabilityResultSchema = z.discriminatedUnion("kind", [
 export const capabilitySyncResponseSchema = z.object({
   jobId: z.string().min(1),
   status: z.literal("done"),
-  creditsUsed: z.number().int().nonnegative(),
+  creditsUsed: nonnegativeCreditAmountSchema,
   resultExpiresAt: z.string().datetime(),
   result: capabilityResultSchema
 });
@@ -310,6 +330,11 @@ export const transcriptionJobCreateResponseSchema = z.union([
 
 export const imageGenerationJobCreateResponseSchema = z.union([
   imageGenerationJobSyncResponseSchema,
+  asyncJobQueuedResponseSchema
+]);
+
+export const extractionJobCreateResponseSchema = z.union([
+  capabilitySyncResponseSchema,
   asyncJobQueuedResponseSchema
 ]);
 
@@ -342,13 +367,17 @@ export const imageJobDetailResponseSchema = z.object({
 
 export const jobResponseSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(["ocr", "transcription", "image_generation"]),
+  type: jobTypeSchema,
   status: jobStatusSchema,
   syncOrAsync: processingModeSchema,
   inputFilename: z.string().min(1),
-  creditsUsed: z.number().int().optional(),
+  creditsUsed: nonnegativeCreditAmountSchema.optional(),
   pageCount: z.number().int().optional(),
   durationMinutes: z.number().optional(),
+  sheetCount: z.number().int().optional(),
+  rowCount: z.number().int().optional(),
+  slideCount: z.number().int().optional(),
+  extractionFormat: z.enum(["docx", "xlsx", "csv", "tsv", "pptx"]).optional(),
   resultExpiresAt: z.string().datetime().optional(),
   resultAvailable: z.boolean(),
   createdAt: z.string().datetime(),
@@ -362,7 +391,7 @@ export const jobListQuerySchema = z
   .object({
     page: integerQueryParamSchema,
     limit: integerQueryParamSchema,
-    type: z.enum(["ocr", "transcription", "image_generation"]).optional(),
+    type: jobTypeSchema.optional(),
     status: jobStatusSchema.optional()
   })
   .transform(({ page, limit, type, status }) => ({
@@ -394,8 +423,8 @@ export const creditLedgerListQuerySchema = z
 export const creditLedgerEntryResponseSchema = z.object({
   id: z.string().min(1),
   type: creditLedgerEntryTypeSchema,
-  amount: z.number().int(),
-  balanceAfter: z.number().int(),
+  amount: creditAmountSchema,
+  balanceAfter: creditAmountSchema,
   referenceJobId: z.string().min(1).optional(),
   description: z.string().min(1).optional(),
   stripeReceiptUrl: z.string().url().optional(),
@@ -419,9 +448,9 @@ export const jobResultResponseSchema = z.object({
   status: jobStatusSchema,
   // `type` is required so MCP clients can branch safely on kind
   // (e.g. `image_generation` → render presigned URL).
-  type: z.enum(["ocr", "transcription", "image_generation"]),
+  type: jobTypeSchema,
   result: capabilityResultSchema.optional(),
-  creditsUsed: z.number().int().nonnegative().optional(),
+  creditsUsed: nonnegativeCreditAmountSchema.optional(),
   imageDetail: imageJobDetailResponseSchema.optional(),
   resultExpiresAt: z.string().datetime().optional(),
   resultAvailable: z.boolean(),
@@ -430,13 +459,13 @@ export const jobResultResponseSchema = z.object({
 });
 
 export const creditBalanceResponseSchema = z.object({
-  credits: z.number().int()
+  credits: nonnegativeCreditAmountSchema
 });
 
 export const dashboardSummaryResponseSchema = z.object({
-  balanceCredits: z.number().int().nonnegative(),
+  balanceCredits: nonnegativeCreditAmountSchema,
   totalJobs: z.number().int().nonnegative(),
-  totalCreditsUsed: z.number().int().nonnegative(),
+  totalCreditsUsed: nonnegativeCreditAmountSchema,
   recentJobs: z.array(jobResponseSchema).max(DASHBOARD_RECENT_JOBS_LIMIT)
 });
 
@@ -458,6 +487,11 @@ const mcpUploadedFileReferenceInputSchema = z.object({
 }).strict();
 
 export const mcpOcrInputSchema = z.union([
+  mcpFilePathInputSchema,
+  mcpUploadedFileReferenceInputSchema
+]);
+
+export const mcpExtractionInputSchema = z.union([
   mcpFilePathInputSchema,
   mcpUploadedFileReferenceInputSchema
 ]);
@@ -500,7 +534,7 @@ export const mcpAsyncResultSchema = z.object({
 export const mcpDoneResultSchema = z.object({
   status: z.literal("done"),
   jobId: z.string().min(1).optional(),
-  creditsUsed: z.number().int().nonnegative().optional(),
+  creditsUsed: nonnegativeCreditAmountSchema.optional(),
   resultExpiresAt: z.string().datetime().optional(),
   result: capabilityResultSchema.optional()
 });
@@ -539,6 +573,7 @@ export type ImageGenerationJobSyncResponseSchema = z.infer<
 export type ImageGenerationJobCreateResponseSchema = z.infer<
   typeof imageGenerationJobCreateResponseSchema
 >;
+export type ExtractionJobCreateResponseSchema = z.infer<typeof extractionJobCreateResponseSchema>;
 export type ImageResultSchema = z.infer<typeof imageResultSchema>;
 export type JobResponseSchema = z.infer<typeof jobResponseSchema>;
 export type JobListQuerySchema = z.infer<typeof jobListQuerySchema>;
@@ -554,6 +589,7 @@ export type McpAsyncResultSchema = z.infer<typeof mcpAsyncResultSchema>;
 export type McpDoneResultSchema = z.infer<typeof mcpDoneResultSchema>;
 export type TranscriptionJobOptionsSchema = z.infer<typeof transcriptionJobOptionsSchema>;
 export type McpToolResultSchema = z.infer<typeof mcpToolResultSchema>;
+export type McpExtractionInputSchema = z.infer<typeof mcpExtractionInputSchema>;
 
 const resultImageMimeTypeSchema = z
   .string()
@@ -603,10 +639,10 @@ export const accountExportResponseSchema = z.object({
   jobs: z.array(
     z.object({
       id: z.string().min(1),
-      type: z.enum(["ocr", "transcription", "image_generation"]),
+      type: jobTypeSchema,
       status: jobStatusSchema,
       inputFilename: z.string().min(1),
-      creditsUsed: z.number().int().optional(),
+      creditsUsed: nonnegativeCreditAmountSchema.optional(),
       createdAt: z.string().datetime(),
       completedAt: z.string().datetime().optional()
     })

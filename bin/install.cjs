@@ -1328,7 +1328,7 @@ function runSelftest() {
       const names = tools.map((t) => t.name).sort();
       // Selftest boots the server in stdio mode, which exposes only the three
       // core tools. upload_file / fetch_result_file are HTTP-only.
-      const expected = ["get_job_result", "ocr_to_markdown", "transcribe_to_markdown"];
+      const expected = ["extract_to_markdown", "generate_image", "get_job_result", "ocr_to_markdown", "transcribe_to_markdown"];
       for (const name of expected) {
         if (!names.includes(name)) throw new Error(`missing tool: ${name}. Got: ${names.join(", ")}`);
       }

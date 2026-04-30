@@ -1,4 +1,5 @@
 import {
+  SUPPORTED_EXTRACTION_MIME_TYPES,
   SUPPORTED_OCR_MIME_TYPES,
   SUPPORTED_TRANSCRIPTION_MIME_TYPES
 } from "../shared/index.js";
@@ -17,7 +18,12 @@ const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   ".wav": "audio/wav",
   ".mp4": "video/mp4",
   ".mov": "video/quicktime",
-  ".webm": "video/webm"
+  ".webm": "video/webm",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".csv": "text/csv",
+  ".tsv": "text/tab-separated-values",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 };
 
 export async function prepareOcrLocalFile(filePath: string) {
@@ -26,6 +32,10 @@ export async function prepareOcrLocalFile(filePath: string) {
 
 export async function prepareTranscriptionLocalFile(filePath: string) {
   return prepareLocalFile(filePath, SUPPORTED_TRANSCRIPTION_MIME_TYPES);
+}
+
+export async function prepareExtractionLocalFile(filePath: string) {
+  return prepareLocalFile(filePath, SUPPORTED_EXTRACTION_MIME_TYPES);
 }
 
 /**

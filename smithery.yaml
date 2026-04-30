@@ -75,8 +75,7 @@ metadata:
   description: >-
     MCP-first multimodal utility that makes AI agents more capable. Today:
     OCR for PDFs/images and transcription for audio/video into clean Markdown,
-    plus image generation from text prompts. Next releases: file extraction
-    (Excel → Markdown) and Markdown-to-file generation.
+    plus Office/CSV extraction to Markdown and image generation from text prompts.
   homepage: https://getfrenchie.dev
   documentation: https://getfrenchie.dev/docs
   repository: https://github.com/Lab94/frenchie-skill
@@ -91,9 +90,12 @@ metadata:
     - mcp
     - ocr
     - transcription
+    - file-extraction
     - image-generation
     - text-to-image
     - pdf
+    - office
+    - csv
     - markdown
     - audio
     - video

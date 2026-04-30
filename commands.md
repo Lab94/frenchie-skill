@@ -1,6 +1,6 @@
 # Frenchie Commands
 
-Frenchie is an MCP-first multimodal utility — today it ships OCR, transcription, and image generation commands below. Other capabilities will land here as they launch.
+Frenchie is an MCP-first multimodal utility — today it ships OCR, transcription, extraction, and image generation commands below.
 
 ## `/ocr <file>`
 
@@ -54,6 +54,32 @@ HTTP upload flow (use the `upload_file` MCP tool — never call the REST presign
 4. Pass `object_key` as `uploaded_file_reference` to `transcribe_to_markdown`
 
 Supported formats: MP3, M4A, WAV, MP4, MOV, WebM
+
+## `/extract <file>`
+
+Convert a local Word, Excel, CSV/TSV, or PowerPoint file into Markdown through the Frenchie MCP server.
+
+Preferred tool:
+
+- `extract_to_markdown`
+
+Inputs (use one, not both):
+
+- `uploaded_file_reference` — object key from the HTTP upload flow
+- `file_path` — absolute path to the local file (stdio transport only)
+- optional `api_key`
+
+Hard rule: if the MCP server is configured with `url` or `serverUrl`, NEVER send `file_path`. Upload first and use `uploaded_file_reference`.
+Hard rule: in HTTP mode, MUST persist the final Markdown to `.frenchie/{name}/result.md` before concluding the task. This rule does not apply to stdio mode because the local MCP server already writes `.frenchie/...` automatically.
+
+HTTP upload flow (use the `upload_file` MCP tool — never call the REST presign endpoint directly):
+
+1. Call the `upload_file` MCP tool with `filename`, `file_size` (bytes), and `mime_type`
+2. The tool returns `upload_url`, `object_key`, and `expires_in`
+3. `PUT` the file to `upload_url` with the correct `Content-Type` header (e.g. `curl -X PUT -H "Content-Type: text/csv" -T data.csv "<upload_url>"`)
+4. Pass `object_key` as `uploaded_file_reference` to `extract_to_markdown`
+
+Supported formats: DOCX, XLSX, CSV, TSV, PPTX
 
 ## `/generate-image <prompt>`
 

@@ -1,5 +1,6 @@
 import {
   imageGenerationJobCreateResponseSchema,
+  extractionJobCreateResponseSchema,
   jobResponseSchema,
   jobResultResponseSchema,
   ocrJobCreateResponseSchema,
@@ -10,6 +11,7 @@ import {
   type ImageGenerationBackground,
   type ImageGenerationFormat,
   type ImageGenerationJobCreateResponse,
+  type ExtractionJobCreateResponse,
   type ImageGenerationQuality,
   type ImageGenerationSize,
   type JobResponse,
@@ -117,6 +119,17 @@ export class ApiClient {
   ): Promise<ImageGenerationJobCreateResponse> {
     const payload = await this.requestJson("POST", "/jobs/image", apiKey, input);
     return imageGenerationJobCreateResponseSchema.parse(payload);
+  }
+
+  async createExtractionJob(
+    apiKey: string,
+    input: {
+      objectKey: string;
+      mimeType?: string;
+    }
+  ): Promise<ExtractionJobCreateResponse> {
+    const payload = await this.requestJson("POST", "/jobs/extract", apiKey, input);
+    return extractionJobCreateResponseSchema.parse(payload);
   }
 
   async getJob(apiKey: string, jobId: string): Promise<JobResponse> {

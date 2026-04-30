@@ -36,6 +36,7 @@ test("exports stable skill metadata and command list", () => {
   assert.deepEqual(SKILL_COMMANDS, [
     "/ocr <file>",
     "/transcribe <file>",
+    "/extract <file>",
     "/generate-image <prompt>",
     "/frenchie-status"
   ]);

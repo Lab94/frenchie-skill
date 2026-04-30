@@ -1,4 +1,5 @@
-export type JobType = "ocr" | "transcription" | "image_generation";
+export type JobType = "ocr" | "transcription" | "image_generation" | "extraction";
+export type ExtractionFormat = "docx" | "xlsx" | "csv" | "tsv" | "pptx";
 export type JobStatus = "queued" | "processing" | "done" | "failed";
 export type ProcessingMode = "sync" | "async";
 export type CreditLedgerEntryType = "topup" | "debit" | "refund" | "adjustment";
@@ -198,6 +199,7 @@ export type TranscriptionJobCreateResponse =
 export type ImageGenerationJobCreateResponse =
   | CapabilitySyncResponse
   | AsyncJobQueuedResponse;
+export type ExtractionJobCreateResponse = CapabilitySyncResponse | AsyncJobQueuedResponse;
 
 /**
  * Dashboard-only metadata about an image generation job — the
@@ -233,6 +235,10 @@ export interface JobResponse {
   creditsUsed?: number;
   pageCount?: number;
   durationMinutes?: number;
+  sheetCount?: number;
+  rowCount?: number;
+  slideCount?: number;
+  extractionFormat?: ExtractionFormat;
   resultExpiresAt?: string;
   resultAvailable: boolean;
   createdAt: string;
@@ -375,6 +381,10 @@ export type OcrToMarkdownToolInput =
 export type TranscribeToMarkdownToolInput =
   | (McpToolFilePathInput & { language?: string })
   | (McpToolUploadedFileReferenceInput & { language?: string });
+
+export type ExtractToMarkdownToolInput =
+  | McpToolFilePathInput
+  | McpToolUploadedFileReferenceInput;
 
 export interface GetJobResultToolInput {
   job_id: string;

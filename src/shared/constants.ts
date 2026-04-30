@@ -27,16 +27,74 @@ export const SUPPORTED_TRANSCRIPTION_MIME_TYPES = [
   "audio/webm"
 ] as const;
 
+export const SUPPORTED_EXTRACTION_MIME_TYPES = [
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/csv",
+  "text/tab-separated-values"
+] as const;
+
 export const SUPPORTED_MIME_TYPES = [
   ...SUPPORTED_OCR_MIME_TYPES,
-  ...SUPPORTED_TRANSCRIPTION_MIME_TYPES
+  ...SUPPORTED_TRANSCRIPTION_MIME_TYPES,
+  ...SUPPORTED_EXTRACTION_MIME_TYPES
 ] as const;
+
+export const EXTRACTION_FILE_SIZE_CAPS = {
+  docx: 50 * 1024 * 1024,
+  xlsx: 50 * 1024 * 1024,
+  pptx: 50 * 1024 * 1024,
+  csv: 20 * 1024 * 1024,
+  tsv: 20 * 1024 * 1024
+} as const;
+
+export const EXTRACTION_PRICING = {
+  docx: { perPage: 0.5, minimum: 0.5 },
+  xlsx: { perSheet: 0.5, minimum: 0.5 },
+  csv: { perFile: 0.5, minimum: 0.5 },
+  tsv: { perFile: 0.5, minimum: 0.5 },
+  pptx: { perSlide: 1, minimum: 1 }
+} as const;
 
 export const CREDIT_RATES = {
   OCR_PER_PAGE: 1,
   TRANSCRIPTION_PER_MINUTE: 2,
   IMAGE_GENERATION_PER_IMAGE: 20
 } as const;
+
+import type { ExtractionFormat } from "./types";
+
+export interface ExtractionUnits {
+  pages?: number;
+  sheets?: number;
+  rows?: number;
+  slides?: number;
+}
+
+export function calculateExtractionCredits(
+  format: ExtractionFormat,
+  units: ExtractionUnits
+): number {
+  const rule = EXTRACTION_PRICING[format];
+  let raw: number;
+  switch (format) {
+    case "docx":
+      raw = (units.pages ?? 0) * 0.5;
+      break;
+    case "xlsx":
+      raw = (units.sheets ?? 0) * 0.5;
+      break;
+    case "pptx":
+      raw = (units.slides ?? 0) * 1;
+      break;
+    case "csv":
+    case "tsv":
+      raw = 0.5;
+      break;
+  }
+  return Math.max(raw, rule.minimum);
+}
 
 export const IMAGE_GENERATION_FORMATS = ["png", "jpeg", "webp"] as const;
 export const IMAGE_GENERATION_SIZES = [
